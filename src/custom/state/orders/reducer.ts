@@ -21,7 +21,7 @@ import {
 import { ContractDeploymentBlocks } from './consts'
 import { Writable } from 'types'
 import { classifyOrder } from 'state/orders/utils'
-import { Timestamp } from '../../../../.yalc/@gnosis.pm/gp-v2-contracts'
+import { Timestamp } from '@gnosis.pm/gp-v2-contracts'
 
 // previous order state, to use in checks
 // in case users have older, stale state and we need to handle
