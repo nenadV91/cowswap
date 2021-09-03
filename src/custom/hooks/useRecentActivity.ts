@@ -32,16 +32,22 @@ enum TxReceiptStatus {
 }
 
 // One FULL day in MS (milliseconds not Microsoft)
-const DAY_MS = 86_400_000
+// const DAY_MS = 86_400_000
 
-/**
- * Returns whether a order happened in the last day (86400 seconds * 1000 milliseconds / second)
- * @param order
- */
-function isOrderRecent(order: Order): boolean {
-  return Date.now() - Date.parse(order.creationTime) < DAY_MS
+// /**
+//  * Returns whether a order happened in the last day (86400 seconds * 1000 milliseconds / second)
+//  * @param order
+//  */
+// function isOrderRecent(order: Order): boolean {
+//   return Date.now() - Date.parse(order.creationTime) < DAY_MS
+// }
+
+function sortByDate(a: Order, b: Order): number {
+  const aDate = new Date(a.creationTime)
+  const bDate = new Date(b.creationTime)
+
+  return aDate > bDate ? -1 : aDate < bDate ? 1 : 0
 }
-
 /**
  * useRecentActivity
  * @description returns all RECENT (last day) transaction and orders in 2 arrays: pending and confirmed
@@ -55,14 +61,18 @@ export default function useRecentActivity() {
     // Filter out any pending/fulfilled orders OLDER than 1 day
     // and adjust order object to match TransactionDetail addedTime format
     // which is used later in app to render list of activity
-    const adjustedOrders = allNonEmptyOrders.filter(isOrderRecent).map((order) => {
-      // we need to essentially match TransactionDetails type which uses "addedTime" for date checking
-      // and time in MS vs ISO string as Orders uses
-      return {
-        ...order,
-        addedTime: Date.parse(order.creationTime),
-      }
-    })
+    const adjustedOrders = allNonEmptyOrders
+      // .filter(isOrderRecent)
+      .map((order) => {
+        // we need to essentially match TransactionDetails type which uses "addedTime" for date checking
+        // and time in MS vs ISO string as Orders uses
+        return {
+          ...order,
+          addedTime: Date.parse(order.creationTime),
+        }
+      })
+      .sort(sortByDate)
+      .slice(0, 10)
 
     return adjustedOrders
   }, [allNonEmptyOrders])

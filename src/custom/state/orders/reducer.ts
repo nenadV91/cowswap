@@ -16,9 +16,12 @@ import {
   requestOrderCancellation,
   SerializedOrder,
   setIsOrderUnfillable,
+  addOrUpdateOrdersBatch,
 } from './actions'
 import { ContractDeploymentBlocks } from './consts'
 import { Writable } from 'types'
+import { classifyOrder } from 'state/orders/utils'
+import { Timestamp } from '../../../../.yalc/@gnosis.pm/gp-v2-contracts'
 
 // previous order state, to use in checks
 // in case users have older, stale state and we need to handle
@@ -90,6 +93,14 @@ function prefillState(
   }
 }
 
+function getValidTo(order: { validTo: Timestamp }): number {
+  const { validTo } = order
+  if (typeof validTo === 'number') {
+    return validTo
+  }
+  return Math.floor(validTo.getTime() / 1000)
+}
+
 const initialState: OrdersState = {}
 
 export default createReducer(initialState, (builder) =>
@@ -107,6 +118,72 @@ export default createReducer(initialState, (builder) =>
       delete state[chainId].fulfilled[id]
       delete state[chainId].expired[id]
       delete state[chainId].cancelled[id]
+    })
+    .addCase(addOrUpdateOrdersBatch, (state, action) => {
+      prefillState(state, action)
+      const { chainId, orders } = action.payload
+      const pending = state[chainId].pending
+      const fulfilled = state[chainId].fulfilled
+      const expired = state[chainId].expired
+      const cancelled = state[chainId].cancelled
+
+      orders.forEach((newOrder) => {
+        const { id } = newOrder
+        if (newOrder.apiAdditionalInfo) {
+          const status = classifyOrder({
+            ...newOrder.apiAdditionalInfo,
+            uid: id,
+            validTo: getValidTo(newOrder),
+          })
+
+          // does the order exist already in the state?
+          // if so, get it, and remove from state
+          let orderObj
+          if (pending[id]) {
+            orderObj = pending[id]
+            delete pending[id]
+          } else if (fulfilled[id]) {
+            orderObj = fulfilled[id]
+            delete fulfilled[id]
+          } else if (expired[id]) {
+            orderObj = expired[id]
+            delete expired[id]
+          } else if (cancelled[id]) {
+            orderObj = cancelled[id]
+            delete cancelled[id]
+          }
+
+          const order = orderObj
+            ? { ...orderObj.order, apiAdditionalInfo: newOrder.apiAdditionalInfo, status: newOrder.status }
+            : newOrder
+
+          // what's the status now?
+          // add order to respective state
+          switch (status) {
+            case 'pending':
+              pending[id] = { order, id }
+              break
+            case 'cancelled':
+              cancelled[id] = { order, id }
+              break
+            case 'expired':
+              expired[id] = { order, id }
+              break
+            case 'fulfilled':
+              fulfilled[id] = { order, id }
+              break
+            default:
+              // TODO: add it regardless?
+              console.warn(`Unknown state '${state}' for order`, id, newOrder)
+          }
+        }
+        console.warn(`Order not from API '${id}'`, newOrder)
+        // TODO: no api info, assume pending?
+      })
+      // for each order:
+      // classify order
+      // check whether is already pending, fulfilled, expired, cancelled
+      // move new state
     })
     .addCase(fulfillOrder, (state, action) => {
       prefillState(state, action)
