@@ -53,7 +53,7 @@ function sortByDate(a: Order, b: Order): number {
  * @description returns all RECENT (last day) transaction and orders in 2 arrays: pending and confirmed
  */
 export default function useRecentActivity() {
-  const { chainId } = useActiveWeb3React()
+  const { chainId, account } = useActiveWeb3React()
   const allTransactions = useAllTransactions()
   const allNonEmptyOrders = useOrders({ chainId })
 
@@ -63,6 +63,7 @@ export default function useRecentActivity() {
     // which is used later in app to render list of activity
     const adjustedOrders = allNonEmptyOrders
       // .filter(isOrderRecent)
+      .filter((order) => order.owner === account)
       .map((order) => {
         // we need to essentially match TransactionDetails type which uses "addedTime" for date checking
         // and time in MS vs ISO string as Orders uses
@@ -75,7 +76,7 @@ export default function useRecentActivity() {
       .slice(0, 10)
 
     return adjustedOrders
-  }, [allNonEmptyOrders])
+  }, [account, allNonEmptyOrders])
 
   const recentTransactionsAdjusted = useMemo<TransactionAndOrder[]>(() => {
     // Filter out any pending/fulfilled transactions OLDER than 1 day
@@ -83,6 +84,7 @@ export default function useRecentActivity() {
     // which is used later in app to render list of activity
     const adjustedTransactions = Object.values(allTransactions)
       .filter(isTransactionRecent)
+      .filter((tx) => tx.from === account)
       .map((tx) => {
         return {
           ...tx,
@@ -93,7 +95,7 @@ export default function useRecentActivity() {
       })
 
     return adjustedTransactions
-  }, [allTransactions])
+  }, [account, allTransactions])
 
   return useMemo(() => {
     // Concat together the TransactionDetails[] and Orders[]
