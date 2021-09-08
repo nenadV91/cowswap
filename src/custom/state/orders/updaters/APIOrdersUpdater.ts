@@ -41,14 +41,14 @@ export function APIOrdersUpdater(): null {
 
   useEffect(() => {
     if (account && chainId && Object.keys(allTokens).length > 0) {
-      console.log(`APIOrdersUpdater::tokens ${Object.keys(allTokens).length}`, allTokens)
-      getOrders(chainId, account)
+      getOrders(chainId, account, 100)
         .then((_orders) => {
-          console.log(`APIOrdersUpdater::Fetched ${_orders.length} for account ${account} on chain ${chainId}`)
+          console.log(`APIOrdersUpdater::Fetched ${_orders.length} orders for account ${account} on chain ${chainId}`)
 
           const orders = _orders.reduce<Order[]>((acc, order) => {
             const { uid: id, sellToken, buyToken, creationDate: creationTime, receiver } = order
 
+            // TODO: load tokens when not already loaded
             const inputToken = getToken(sellToken, chainId, allTokens)
             const outputToken = getToken(buyToken, chainId, allTokens)
 
@@ -60,7 +60,6 @@ export function APIOrdersUpdater(): null {
             }
 
             if (inputToken && outputToken) {
-              //TODO: adjust status
               acc.push({
                 ...order,
                 inputToken,

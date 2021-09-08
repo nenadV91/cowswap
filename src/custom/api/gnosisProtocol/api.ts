@@ -257,24 +257,18 @@ export async function getOrder(chainId: ChainId, orderId: string): Promise<Order
   }
 }
 
-export async function getOrders(chainId: ChainId, owner: string, minValidTo = 0): Promise<OrderMetaData[]> {
-  console.log(`[api:${API_NAME}] Get orders for `, chainId, owner)
+export async function getOrders(
+  chainId: ChainId,
+  owner: string,
+  limit?: number,
+  offset?: number
+): Promise<OrderMetaData[]> {
+  console.log(`[api:${API_NAME}] Get orders for `, chainId, owner, limit, offset)
 
-  const queryString = stringify(
-    {
-      owner,
-      minValidTo: minValidTo,
-      includeFullyExecuted: true,
-      includeInvalidated: true,
-      includeInsufficientBalance: true,
-      includePresignaturePending: true,
-      includeUnsupportedTokens: true,
-    },
-    { addQueryPrefix: true }
-  )
+  const queryString = stringify({ limit, offset }, { addQueryPrefix: true })
 
   try {
-    const response = await _get(chainId, `/orders/${queryString}`)
+    const response = await _get(chainId, `/account/${owner}/orders/${queryString}`)
 
     if (!response.ok) {
       const errorResponse: ApiErrorObject = await response.json()
