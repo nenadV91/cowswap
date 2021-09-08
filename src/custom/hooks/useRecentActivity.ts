@@ -43,10 +43,10 @@ enum TxReceiptStatus {
 // }
 
 function sortByDate(a: Order, b: Order): number {
-  const aDate = new Date(a.creationTime)
-  const bDate = new Date(b.creationTime)
+  const dateA = new Date(a.creationTime)
+  const dateB = new Date(b.creationTime)
 
-  return aDate > bDate ? -1 : aDate < bDate ? 1 : 0
+  return dateA > dateB ? -1 : dateA < dateB ? 1 : 0
 }
 /**
  * useRecentActivity
@@ -58,12 +58,15 @@ export default function useRecentActivity() {
   const allNonEmptyOrders = useOrders({ chainId })
 
   const recentOrdersAdjusted = useMemo<TransactionAndOrder[]>(() => {
+    if (!chainId || !account) {
+      return []
+    }
     // Filter out any pending/fulfilled orders OLDER than 1 day
     // and adjust order object to match TransactionDetail addedTime format
     // which is used later in app to render list of activity
     const adjustedOrders = allNonEmptyOrders
-      // .filter(isOrderRecent)
-      .filter((order) => order.owner === account)
+      // only show orders for connected account
+      .filter((order) => order.owner.toLowerCase() === account.toLowerCase())
       .map((order) => {
         // we need to essentially match TransactionDetails type which uses "addedTime" for date checking
         // and time in MS vs ISO string as Orders uses
@@ -73,10 +76,11 @@ export default function useRecentActivity() {
         }
       })
       .sort(sortByDate)
-      .slice(0, 10)
+      // show at most 10 regular orders, and as much pending as there are
+      .filter((order, index) => index < 10 || order.status === OrderStatus.PENDING)
 
     return adjustedOrders
-  }, [account, allNonEmptyOrders])
+  }, [account, allNonEmptyOrders, chainId])
 
   const recentTransactionsAdjusted = useMemo<TransactionAndOrder[]>(() => {
     // Filter out any pending/fulfilled transactions OLDER than 1 day
