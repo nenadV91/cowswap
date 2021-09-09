@@ -1,9 +1,9 @@
-import React, { useCallback } from 'react'
-import { batch, useDispatch } from 'react-redux'
+import React from 'react'
+// import { batch, useDispatch } from 'react-redux'
 
 import { useActiveWeb3React } from 'hooks/web3'
-import { AppDispatch } from 'state'
-import { clearAllTransactions } from 'state/transactions/actions'
+// import { AppDispatch } from 'state'
+// import { clearAllTransactions } from 'state/transactions/actions'
 import { getExplorerLabel, shortenAddress } from 'utils'
 
 import Copy from 'components/Copy'
@@ -18,8 +18,8 @@ import FortmaticIcon from 'assets/images/fortmaticIcon.png'
 import PortisIcon from 'assets/images/portisIcon.png'
 import Identicon from 'components/Identicon'
 import { ExternalLink as LinkIcon } from 'react-feather'
-import { LinkStyledButton } from 'theme'
-import { clearOrders } from 'state/orders/actions'
+// import { LinkStyledButton } from 'theme'
+// import { clearOrders } from 'state/orders/actions'
 import { NETWORK_LABELS } from 'components/Header'
 import {
   WalletName,
