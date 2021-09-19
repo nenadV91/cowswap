@@ -23,6 +23,7 @@ import MetadataError, {
   MetadataApiErrorCodes,
   MetadataApiErrorObject,
 } from './errors/MetadataError'
+import * as Sentry from '@sentry/browser'
 
 import { DEFAULT_NETWORK_FOR_LISTS } from 'constants/lists'
 import { GAS_FEE_ENDPOINTS } from 'constants/index'
@@ -193,13 +194,27 @@ const UNHANDLED_METADATA_ERROR: MetadataApiErrorObject = {
   description: MetadataApiErrorCodeDetails.UNHANDLED_GET_ERROR,
 }
 
-async function _handleQuoteResponse(response: Response) {
+async function _handleQuoteResponse(response: Response, params?: FeeQuoteParams) {
   if (!response.ok) {
     const errorObj: ApiErrorObject = await response.json()
 
     // we need to map the backend error codes to match our own for quotes
     const mappedError = mapOperatorErrorToQuoteError(errorObj)
-    throw new QuoteError(mappedError)
+    const quoteError = new QuoteError(mappedError)
+
+    // report this to sentry
+    if (params) {
+      const { sellToken, buyToken } = params
+      const sentryError = Object.assign(quoteError, {
+        message: `Quote fetch failed: sellToken: ${sellToken}, buyToken: ${buyToken}`,
+      })
+      Sentry.captureException(sentryError, {
+        tags: { errorType: 'getFeeQuote' },
+        contexts: { params },
+      })
+    }
+
+    throw quoteError
   } else {
     return response.json()
   }
@@ -235,7 +250,7 @@ export async function getFeeQuote(params: FeeQuoteParams): Promise<FeeInformatio
     throw new QuoteError(UNHANDLED_QUOTE_ERROR)
   })
 
-  return _handleQuoteResponse(response)
+  return _handleQuoteResponse(response, params)
 }
 
 export async function getOrder(chainId: ChainId, orderId: string): Promise<OrderMetaData | null> {

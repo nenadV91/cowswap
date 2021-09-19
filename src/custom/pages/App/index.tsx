@@ -26,6 +26,7 @@ if (SENTRY_DSN) {
     integrations: [new Integrations.BrowserTracing()],
     release: 'CowSwap@v' + version,
     environment: environmentName,
+    debug: true,
 
     // Set tracesSampleRate to 1.0 to capture 100%
     // of transactions for performance monitoring.

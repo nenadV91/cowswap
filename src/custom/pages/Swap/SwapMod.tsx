@@ -462,10 +462,6 @@ export default function Swap({
     }
   }
 
-  const handleErrorButton = () => {
-    throw new Error('Random error 1')
-  }
-
   return (
     <>
       <TokenWarningModal
@@ -710,9 +706,6 @@ export default function Swap({
             padding="5px 15px"
           />
           <BottomGrouping>
-            <div>
-              <button onClick={handleErrorButton}>THrow</button>
-            </div>
             {swapIsUnsupported ? (
               <ButtonPrimary disabled={true} buttonSize={ButtonSize.BIG}>
                 <TYPE.main mb="4px">
