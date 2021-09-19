@@ -206,7 +206,8 @@ async function _handleQuoteResponse(response: Response, params?: FeeQuoteParams)
     if (params) {
       const { sellToken, buyToken } = params
       const sentryError = Object.assign(quoteError, {
-        message: `Quote fetch failed: sellToken: ${sellToken}, buyToken: ${buyToken}`,
+        message: `Error querying fee from API - sellToken: ${sellToken}, buyToken: ${buyToken}`,
+        name: 'FeeErrorObject',
       })
       Sentry.captureException(sentryError, {
         tags: { errorType: 'getFeeQuote' },

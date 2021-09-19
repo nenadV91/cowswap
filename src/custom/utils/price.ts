@@ -172,8 +172,6 @@ export async function getBestPrice(params: PriceQuoteParams, options?: GetBestPr
     matchaPriceResult
   )
 
-  priceQuotes.length = 0
-
   // Print prices who failed to be fetched
   if (errorsGetPrice.length > 0) {
     const sourceNames = errorsGetPrice.map((e) => e.source).join(', ')
@@ -189,12 +187,19 @@ export async function getBestPrice(params: PriceQuoteParams, options?: GetBestPr
     return _filterWinningPrice({ ...options, kind: params.kind, amounts, priceQuotes })
   } else {
     // It was not possible to get a price estimation
+    const priceQuoteError = new PriceQuoteError('Error querying price from APIs', params, [
+      priceResult,
+      paraSwapPriceResult,
+    ])
+
     const { baseToken, quoteToken } = params
-    const errorMsg = `Error querying price from APIs - baseToken: ${baseToken}, quoteToken: ${quoteToken}`
-    const priceQuoteError = new PriceQuoteError(errorMsg, params, [priceResult, paraSwapPriceResult])
+    const sentryError = Object.assign(priceQuoteError, {
+      message: `Error querying price from APIs - baseToken: ${baseToken}, quoteToken: ${quoteToken}`,
+      name: 'PriceErrorObject',
+    })
 
     // report this to sentry
-    Sentry.captureException(priceQuoteError, {
+    Sentry.captureException(sentryError, {
       tags: { errorType: 'getBestPrice' },
       contexts: { params },
     })
